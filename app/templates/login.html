@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>تسجيل الدخول | نظام تقصير الروابط</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen font-[Cairo]">
+
+  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+    <h1 class="text-2xl font-bold text-center mb-6 text-green-700">تسجيل الدخول</h1>
+    <form id="login-form" class="space-y-4">
+      <div>
+        <label class="block text-right font-medium mb-1 text-gray-600">البريد الإلكتروني المؤسسي</label>
+        <input type="email" id="email" required
+               class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600"
+               placeholder="example@samaya.com.sa" />
+      </div>
+      <button type="submit"
+              class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition">
+        إرسال رمز التحقق
+      </button>
+    </form>
+
+    <p id="msg" class="text-center text-sm mt-4 text-gray-600"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById("login-form");
+    const msg = document.getElementById("msg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+
+      msg.textContent = "⏳ جاري إرسال الرمز...";
+      msg.classList.remove("text-red-600");
+      msg.classList.add("text-gray-600");
+
+      try {
+        const res = await fetch("/auth/send-otp", {
+          method: "POST",
+          body: new URLSearchParams({ email }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          msg.textContent = "✅ تم إرسال الرمز إلى بريدك الإلكتروني.";
+          msg.classList.remove("text-gray-600");
+          msg.classList.add("text-green-600");
+          setTimeout(() => {
+            window.location.href = `/verify?email=${encodeURIComponent(email)}`;
+          }, 1500);
+        } else {
+          msg.textContent = "❌ " + data.detail;
+          msg.classList.remove("text-gray-600");
+          msg.classList.add("text-red-600");
+        }
+      } catch (err) {
+        msg.textContent = "⚠️ حدث خطأ أثناء الإرسال، حاول مرة أخرى.";
+        msg.classList.remove("text-gray-600");
+        msg.classList.add("text-red-600");
+      }
+    });
+  </script>
+</body>
+</html>

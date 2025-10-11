@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم | نظام تقصير الروابط</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // 🔹 دالة نسخ الرابط
+    function copyToClipboard(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "✅ تم النسخ!";
+        btn.classList.add("bg-green-600", "text-white");
+        setTimeout(() => {
+          btn.textContent = "📋 نسخ";
+          btn.classList.remove("bg-green-600", "text-white");
+        }, 1500);
+      });
+    }
+  </script>
+</head>
+
+<body class="bg-gray-100 font-[Cairo] min-h-screen">
+
+  <!-- 🔹 الشريط العلوي -->
+  <header class="bg-green-700 text-white py-4 shadow-md">
+    <div class="container mx-auto px-6 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">📎 نظام تقصير الروابط | خاص بمنسوبي وزارة التعليم</h1>
+      <div class="text-sm flex items-center gap-2">
+        <span class="font-semibold">{{ email }}</span>
+        <form action="/auth/logout" method="post" class="inline">
+          <button type="submit" class="bg-red-600 hover:bg-red-700 px-4 py-1 rounded-lg ml-3">
+            تسجيل خروج
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <!-- 🔹 المحتوى الرئيسي -->
+  <main class="container mx-auto px-6 py-10">
+
+    <!-- نموذج إضافة رابط جديد -->
+    <section class="bg-white shadow-lg rounded-2xl p-6 mb-10">
+      <h2 class="text-xl font-bold text-green-700 mb-4 text-center">✂️ تقصير رابط جديد</h2>
+      <form id="shorten-form" class="flex flex-col md:flex-row gap-4 items-center justify-center">
+        <input 
+          type="url"
+          id="original_url"
+          name="original_url"
+          required
+          placeholder="أدخل الرابط الطويل هنا..."
+          class="w-full md:w-2/3 border border-gray-300 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-green-600 text-center"
+        />
+        <button 
+          type="submit"
+          class="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition font-medium w-full md:w-auto"
+        >
+          إنشاء رابط مختصر
+        </button>
+      </form>
+
+      <p id="short-url-msg" class="text-center text-green-700 font-semibold mt-4"></p>
+    </section>
+
+    <!-- جدول عرض الروابط -->
+    <section class="bg-white shadow-lg rounded-2xl p-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4 text-center">📋 روابطك المختصرة</h2>
+
+      {% if urls %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-center border border-gray-200 rounded-lg">
+          <thead class="bg-gray-100 text-gray-700">
+            <tr>
+              <th class="py-3 px-4">#</th>
+              <th class="py-3 px-4">الرابط الأصلي</th>
+              <th class="py-3 px-4">الرابط المختصر</th>
+              <th class="py-3 px-4">عدد النقرات</th>
+              <th class="py-3 px-4">تاريخ الإنشاء</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for url in urls %}
+            <tr class="border-t hover:bg-gray-50 transition">
+              <td class="py-3 px-2 text-gray-600">{{ loop.index }}</td>
+              <td class="py-3 px-4 text-green-700 break-all text-sm">
+                <a href="{{ url['original_url'] }}" target="_blank" class="hover:underline">{{ url['original_url'] }}</a>
+              </td>
+              <td class="py-3 px-4 text-blue-600">
+                <div class="flex items-center justify-center gap-2">
+                  <a href="/{{ url['short_code'] }}" target="_blank" class="hover:underline">
+                    {{ request.url_for('redirect_short_url', short_code=url['short_code']) if request else ('http://127.0.0.1:8000/' + url['short_code']) }}
+                  </a>
+                  <button 
+                    onclick="copyToClipboard(window.location.origin + '/{{ url['short_code'] }}', this)"
+                    class="bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
+                  >
+                    📋 نسخ
+                  </button>
+                </div>
+              </td>
+              <td class="py-3 px-4 font-bold text-gray-700">{{ url['clicks'] }}</td>
+              <td class="py-3 px-4 text-gray-500 text-sm">
+                {{ url['created_at'][:10] }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-center text-gray-600 py-6">😅 لا توجد روابط حتى الآن — ابدأ بإضافة أول رابط لك!</p>
+      {% endif %}
+    </section>
+
+  </main>
+
+  <script>
+    // إرسال الرابط لتقصيره
+    document.getElementById("shorten-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const url = document.getElementById("original_url").value.trim();
+      const msg = document.getElementById("short-url-msg");
+
+      msg.textContent = "⏳ جاري إنشاء الرابط...";
+      msg.className = "text-center text-gray-600 mt-4";
+
+      try {
+        const res = await fetch("/shorten", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ original_url: url }),
+        });
+
+        const data = await res.json();
+
+        if (data.status === "success" || data.short_url) {
+          msg.innerHTML = `✅ تم الإنشاء: 
+            <a href="${data.short_url}" target="_blank" class="text-blue-600 underline">${data.short_url}</a>`;
+          msg.className = "text-center text-green-700 mt-4";
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          msg.textContent = "❌ حدث خطأ أثناء إنشاء الرابط.";
+          msg.className = "text-center text-red-600 mt-4";
+        }
+      } catch (error) {
+        msg.textContent = "⚠️ خطأ في الاتصال بالخادم.";
+        msg.className = "text-center text-red-600 mt-4";
+      }
+    });
+  </script>
+
+</body>
+</html>
