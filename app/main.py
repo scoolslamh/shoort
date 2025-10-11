@@ -20,7 +20,9 @@ app = FastAPI(
 )
 
 # إعداد الملفات الثابتة (CSS / JS / صور)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+import os
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # إعداد القوالب (HTML)
 templates = Jinja2Templates(directory="app/templates")
