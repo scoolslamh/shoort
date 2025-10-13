@@ -5,26 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>تسجيل الدخول | نظام تقصير الروابط</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f3f4f6;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen font-[Cairo]">
+<body class="flex flex-col h-screen">
 
-  <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
-    <h1 class="text-2xl font-bold text-center mb-6 text-green-700">تسجيل الدخول</h1>
-    <form id="login-form" class="space-y-4">
-      <div>
-        <label class="block text-right font-medium mb-1 text-gray-600">البريد الإلكتروني المؤسسي</label>
-        <input type="email" id="email" required
-               class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600"
-               placeholder="example@samaya.com.sa" />
-      </div>
-      <button type="submit"
-              class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition">
-        إرسال رمز التحقق
-      </button>
-    </form>
+  <!-- ✅ الهيدر -->
+  <header class="bg-green-700 text-white py-5 shadow-md">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <h1 class="text-2xl md:text-3xl font-bold tracking-wide">
+        خدمة تقصير الروابط الآمن
+      </h1>
+    </div>
+  </header>
 
-    <p id="msg" class="text-center text-sm mt-4 text-gray-600"></p>
-  </div>
+  <!-- ✅ المحتوى الرئيسي -->
+  <main class="flex-grow flex items-center justify-center px-4">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-8">
+      <h2 class="text-2xl font-bold text-center mb-6 text-green-700">تسجيل الدخول</h2>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-right font-medium mb-1 text-gray-600">البريد الإلكتروني</label>
+          <input type="email" id="email" required
+                 class="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-600"
+                 placeholder="البريد الإلكتروني" />
+        </div>
+        <button type="submit"
+                class="w-full bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition">
+          إرسال رمز التحقق
+        </button>
+      </form>
+
+      <p id="msg" class="text-center text-sm mt-4 text-gray-600"></p>
+    </div>
+  </main>
+
+  <!-- ✅ الفوتر -->
+  <footer class="bg-gray-200 py-3 text-center text-sm text-gray-600">
+    © 2025 علي الشهري - جميع الحقوق محفوظة
+  </footer>
 
   <script>
     const form = document.getElementById("login-form");
@@ -41,6 +65,7 @@
       try {
         const res = await fetch("/auth/send-otp", {
           method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: new URLSearchParams({ email }),
         });
 
@@ -53,7 +78,7 @@
             window.location.href = `/verify?email=${encodeURIComponent(email)}`;
           }, 1500);
         } else {
-          msg.textContent = "❌ " + data.detail;
+          msg.textContent = "❌ " + (data.detail || "تعذر إرسال الرمز، حاول لاحقاً.");
           msg.classList.remove("text-gray-600");
           msg.classList.add("text-red-600");
         }
